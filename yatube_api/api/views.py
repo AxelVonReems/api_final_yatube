@@ -1,9 +1,9 @@
 from django.shortcuts import get_object_or_404
-from rest_framework import permissions, viewsets
+from rest_framework import mixins, permissions, viewsets
 from rest_framework.filters import SearchFilter
 from rest_framework.pagination import LimitOffsetPagination
 
-from posts.models import Follow, Group, Post
+from posts.models import Group, Post
 from .permissions import IsAuthorOrReadOnly, FollowPermissions
 from .serializers import (
     CommentSerializer,
@@ -32,7 +32,16 @@ class GroupViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = GroupSerializer
 
 
-class FollowViewSet(viewsets.ModelViewSet):
+class CreateListViewSet(mixins.CreateModelMixin,
+                        mixins.ListModelMixin,
+                        viewsets.GenericViewSet):
+    pass
+
+
+# Пробовал сделать через дженерик ListCreateAPIView, но получал ошибку
+# type object 'FollowViewSet' has no attribute 'get_extra_actions'.
+# В чем может быть проблема?
+class FollowViewSet(CreateListViewSet):
     serializer_class = FollowSerializer
     permission_classes = [permissions.IsAuthenticated, FollowPermissions]
     pagination_class = LimitOffsetPagination
@@ -40,7 +49,7 @@ class FollowViewSet(viewsets.ModelViewSet):
     search_fields = ('following__username',)
 
     def get_queryset(self):
-        return Follow.objects.filter(user=self.request.user)
+        return self.request.user.follower.all()
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)

@@ -1,8 +1,6 @@
-from django.forms import ValidationError
 from rest_framework import serializers
 from rest_framework.relations import SlugRelatedField
 from rest_framework.validators import UniqueTogetherValidator
-
 
 from posts.models import Comment, Group, Follow, Post, User
 
@@ -41,7 +39,7 @@ class FollowSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if self.context['request'].user == attrs['following']:
-            raise ValidationError('На себя подписываться нельзя')
+            raise serializers.ValidationError('На себя подписываться нельзя')
         return attrs
 
 
